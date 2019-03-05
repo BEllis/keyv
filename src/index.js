@@ -67,7 +67,7 @@ class Keyv extends EventEmitter {
 			});
 	}
 
-	set(key, value, ttl) {
+	set(key, value, ttl, tries) {
 		key = this._getKeyPrefix(key);
 		if (typeof ttl === 'undefined') {
 			ttl = this.opts.ttl;
@@ -81,7 +81,14 @@ class Keyv extends EventEmitter {
 			.then(() => {
 				const expires = (typeof ttl === 'number') ? (Date.now() + ttl) : null;
 				if (value instanceof function) {
-					return store.setOptimisticly(key, this.opts.deserialize, this.opts.serialize, value, expires, ttl);
+					tries = tries || 30;
+					const serialize = (obj) => this.opts.serialize({ value: obj, expires: expires });
+					const deserialize = (data) => {
+						const obj = this.opts.deserialize(data);
+						return obj == null ? null : obj.value;
+					};
+
+					return store.setOptimisticly(key, deserialize, serialize, value, tries);
 				} else {
 					value = { value, expires };
 					return store.set(key, this.opts.serialize(value), ttl);
