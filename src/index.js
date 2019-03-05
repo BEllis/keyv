@@ -80,8 +80,12 @@ class Keyv extends EventEmitter {
 		return Promise.resolve()
 			.then(() => {
 				const expires = (typeof ttl === 'number') ? (Date.now() + ttl) : null;
-				value = { value, expires };
-				return store.set(key, this.opts.serialize(value), ttl);
+				if (value instanceof function) {
+					return store.setOptimisticly(key, this.opts.deserialize, this.opts.serialize, value, expires, ttl);
+				} else {
+					value = { value, expires };
+					return store.set(key, this.opts.serialize(value), ttl);
+				}
 			})
 			.then(() => true);
 	}
