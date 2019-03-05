@@ -3,6 +3,10 @@
 const EventEmitter = require('events');
 const JSONB = require('json-buffer');
 
+function isFunction(functionToCheck) {
+ return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
+}
+
 const loadStore = opts => {
 	const adapters = {
 		redis: '@keyv/redis',
@@ -80,7 +84,7 @@ class Keyv extends EventEmitter {
 		return Promise.resolve()
 			.then(() => {
 				const expires = (typeof ttl === 'number') ? (Date.now() + ttl) : null;
-				if (value instanceof function) {
+				if (isFunction(value)) {
 					tries = tries || 30;
 					const serialize = (obj) => this.opts.serialize({ value: obj, expires: expires });
 					const deserialize = (data) => {
